@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StrokeCheck | ระบบคัดกรองความเสี่ยงโรคหลอดเลือดสมอง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <!-- ===== Navbar ===== -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="#top" class="brand">
+        <svg class="brand-icon" viewBox="0 0 32 32" aria-hidden="true">
+          <rect x="1" y="1" width="30" height="30" rx="8" fill="currentColor"/>
+          <path d="M13 7h6v6h6v6h-6v6h-6v-6H7v-6h6z" fill="#fff"/>
+        </svg>
+        <span>Stroke<strong>Check</strong></span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#screening">คัดกรองความเสี่ยง</a></li>
+        <li><a href="#how">วิธีการทำงาน</a></li>
+        <li><a href="#model">ข้อมูลโมเดล</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ===== Hero ===== -->
+  <header class="hero" id="top">
+    <div class="hero-inner">
+      <span class="badge">Machine Learning · Mini Project 344-362</span>
+      <h1>ระบบคัดกรองความเสี่ยง<br>โรคหลอดเลือดสมอง</h1>
+      <p>กรอกข้อมูลสุขภาพพื้นฐาน 6 ข้อ ระบบจะประเมินคะแนนความเสี่ยงด้วยโมเดล Logistic Regression
+        ที่เทรนจากข้อมูลผู้ป่วย 5,110 ราย</p>
+      <a href="#screening" class="btn-hero">เริ่มคัดกรอง</a>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ===== ฟอร์ม + ผลลัพธ์ ===== -->
+    <section id="screening" class="screening">
+      <form id="predict-form" class="card">
+        <h2 class="card-title">ข้อมูลสุขภาพ</h2>
+        <div class="grid">
+          <label>อายุ (ปี)
+            <input type="number" name="age" min="0" max="120" step="1" placeholder="เช่น 55" required>
+          </label>
+
+          <label>ระดับน้ำตาลในเลือดเฉลี่ย (mg/dL)
+            <input type="number" name="avg_glucose_level" min="40" max="400" step="any" placeholder="เช่น 105" required>
+          </label>
+
+          <label>ดัชนีมวลกาย BMI (kg/m²)
+            <input type="number" name="bmi" min="10" max="70" step="any" placeholder="เว้นว่างได้ถ้าไม่ทราบ">
+          </label>
+
+          <label>สถานะการสูบบุหรี่
+            <select name="smoking_status" required>
+              <option value="never smoked">ไม่เคยสูบ</option>
+              <option value="formerly smoked">เคยสูบ (เลิกแล้ว)</option>
+              <option value="smokes">สูบอยู่</option>
+              <option value="Unknown">ไม่ทราบ / ไม่ระบุ</option>
+            </select>
+          </label>
+
+          <fieldset class="toggle">
+            <legend>โรคความดันโลหิตสูง</legend>
+            <label><input type="radio" name="hypertension" value="0" checked> ไม่เป็น</label>
+            <label><input type="radio" name="hypertension" value="1"> เป็น</label>
+          </fieldset>
+
+          <fieldset class="toggle">
+            <legend>โรคหัวใจ</legend>
+            <label><input type="radio" name="heart_disease" value="0" checked> ไม่เป็น</label>
+            <label><input type="radio" name="heart_disease" value="1"> เป็น</label>
+          </fieldset>
+        </div>
+
+        <button type="submit" id="predict-btn">Predict</button>
+      </form>
+
+      <section id="result" class="card result" aria-live="polite">
+        <div id="result-empty" class="result-empty">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M4 26h9l4-10 6 20 5-14 3 4h13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <p>กรอกข้อมูลแล้วกด <strong>Predict</strong><br>ผลการประเมินจะแสดงที่นี่</p>
+        </div>
+
+        <div id="result-content" class="hidden">
+          <p class="result-kicker">ผลการประเมิน</p>
+          <h2 id="result-label"></h2>
+          <p class="score-line">คะแนนความเสี่ยง <strong id="result-score"></strong>
+            <span class="muted">/ เกณฑ์ตัดสิน <span id="result-threshold"></span></span></p>
+          <div class="bar">
+            <div id="bar-fill" class="bar-fill"></div>
+            <div id="bar-marker" class="bar-marker"></div>
+          </div>
+          <div class="bar-scale"><span>0</span><span>ความเสี่ยงต่ำ ← เกณฑ์ → มีความเสี่ยง</span><span>1</span></div>
+          <h3>ความหมายของผลลัพธ์</h3>
+          <p id="result-meaning"></p>
+          <h3>คำแนะนำ</h3>
+          <p id="result-advice"></p>
+        </div>
+
+        <p id="error" class="error hidden"></p>
+      </section>
+    </section>
+
+    <!-- ===== วิธีการทำงาน ===== -->
+    <section id="how" class="section">
+      <h2 class="section-title">วิธีการทำงาน</h2>
+      <div class="steps">
+        <div class="step"><span>1</span><h3>กรอกข้อมูล</h3><p>อายุ น้ำตาล BMI การสูบบุหรี่ ความดันสูง และโรคหัวใจ</p></div>
+        <div class="step"><span>2</span><h3>เตรียมข้อมูล</h3><p>Pipeline เติมค่าที่ขาด ปรับสเกล และแปลงข้อความเป็นตัวเลข แบบเดียวกับตอนเทรน</p></div>
+        <div class="step"><span>3</span><h3>ทำนาย</h3><p>Logistic Regression คำนวณคะแนนความเสี่ยง แล้วเทียบกับเกณฑ์ 0.49</p></div>
+      </div>
+    </section>
+
+    <!-- ===== ข้อมูลโมเดล (ตัวเลขจาก notebooks/02_model.ipynb บนชุด Test) ===== -->
+    <section id="model" class="section">
+      <h2 class="section-title">ข้อมูลโมเดล</h2>
+      <div class="stats">
+        <div class="stat"><strong>0.82</strong><span>Recall<br>จับผู้ป่วยได้ 41 จาก 50 ราย</span></div>
+        <div class="stat"><strong>0.84</strong><span>ROC-AUC</span></div>
+        <div class="stat"><strong>0.14</strong><span>Precision<br>เตือนเกินจริงได้บ่อย</span></div>
+        <div class="stat"><strong>6</strong><span>ฟีเจอร์<br>จากการทำ Feature Selection</span></div>
+      </div>
+      <p class="note">โมเดลตั้งใจให้ <strong>Recall สูง</strong> เพราะในงานคัดกรอง การพลาดผู้ป่วยจริงอันตรายกว่าการเตือนเกิน
+        ข้อมูลจาก Kaggle: Stroke Prediction Dataset (fedesoriano)</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>ใช้เพื่อการศึกษาเท่านั้น ไม่ใช่การวินิจฉัยทางการแพทย์ หากมีอาการผิดปกติ เช่น หน้าเบี้ยว แขนขาอ่อนแรง พูดไม่ชัด ให้รีบไปโรงพยาบาลหรือโทร 1669 ทันที</p>
+    <p class="muted">Mini Project · 344-362 Machine Learning</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
